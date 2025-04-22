@@ -1,0 +1,32 @@
+{
+  "name": "cloudonix-js",
+  "version": "1.0.0",
+  "description": "A JavaScript library for building and serving Cloudonix Voice Application XML (CXML) documents",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "mocha test/**/*.test.js",
+    "start": "node examples/simple-server.js"
+  },
+  "keywords": [
+    "cloudonix",
+    "xml",
+    "cxml",
+    "voice",
+    "telephony",
+    "voip"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "fast-xml-parser": "^4.2.5"
+  },
+  "devDependencies": {
+    "mocha": "^10.2.0"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}
