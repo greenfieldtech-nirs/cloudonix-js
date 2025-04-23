@@ -23,7 +23,21 @@
     "voice-agent",
     "conversational-ai"
   ],
-  "author": "",
+  "private": false,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/greenfieldtech-nirs/cloudonix-js.git"
+  },
+  "bugs": {
+    "url": "https://github.com/greenfieldtech-nirs/cloudonix-js/issues"
+  },
+  "author": {
+    "name": "Nir Simionovich (Using Claude-Code Vibe Codeing)",
+    "email": "nirs@cloudonix.io",
+    "url": "https://github.com/greenfieldtech-nirs/cloudonix-js",
+    "role": "Developer"
+  },
+  "homepage": "https://developers.cloudonix.com",
   "license": "MIT",
   "dependencies": {
     "fast-xml-parser": "^4.2.5"
