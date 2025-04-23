@@ -1,6 +1,6 @@
 /**
  * @file Example demonstrating a complex IVR system with multiple verbs and nesting
- * @copyright 2025 Cloudonix, Inc.
+ * @copyright 2025 Nir Simionovich, nirs@cloudonix.io
  * @license MIT
  */
 

@@ -1,6 +1,6 @@
 /**
  * @file Debug script for XML rendering
- * @copyright 2025 Cloudonix, Inc.
+ * @copyright 2025 Nir Simionovich, nirs@cloudonix.io
  * @license MIT
  */
 

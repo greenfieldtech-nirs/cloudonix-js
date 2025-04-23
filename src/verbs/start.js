@@ -1,6 +1,6 @@
 /**
  * @file Start verb implementation
- * @copyright 2025 Cloudonix, Inc.
+ * @copyright 2025 Nir Simionovich, nirs@cloudonix.io
  * @license MIT
  * @module cloudonix-js/verbs/start
  * @description Implements the Start verb for initiating stream processing

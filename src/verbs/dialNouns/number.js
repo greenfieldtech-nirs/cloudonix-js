@@ -1,6 +1,6 @@
 /**
  * @file Number noun implementation for Dial verb
- * @copyright 2025 Cloudonix, Inc.
+ * @copyright 2025 Nir Simionovich, nirs@cloudonix.io
  * @license MIT
  * @module cloudonix-js/verbs/dialNouns/number
  * @description Implements the Number noun for dialing phone numbers

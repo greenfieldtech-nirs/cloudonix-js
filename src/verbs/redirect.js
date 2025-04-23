@@ -1,6 +1,6 @@
 /**
  * @file Redirect verb implementation
- * @copyright 2025 Cloudonix, Inc.
+ * @copyright 2025 Nir Simionovich, nirs@cloudonix.io
  * @license MIT
  * @module cloudonix-js/verbs/redirect
  * @description Implements the Redirect verb for redirecting to another URL

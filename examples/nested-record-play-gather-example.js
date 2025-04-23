@@ -1,6 +1,6 @@
 /**
  * @file Example demonstrating a complex flow with nested Record, Play, and Gather verbs
- * @copyright 2025 Cloudonix, Inc.
+ * @copyright 2025 Nir Simionovich, nirs@cloudonix.io
  * @license MIT
  */
 

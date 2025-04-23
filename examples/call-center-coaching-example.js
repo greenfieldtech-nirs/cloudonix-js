@@ -1,6 +1,6 @@
 /**
  * @file Example demonstrating a complex call center coaching scenario
- * @copyright 2025 Cloudonix, Inc.
+ * @copyright 2025 Nir Simionovich, nirs@cloudonix.io
  * @license MIT
  */
 

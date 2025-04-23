@@ -1,6 +1,6 @@
 /**
  * @file Gather verb implementation
- * @copyright 2025 Cloudonix, Inc.
+ * @copyright 2025 Nir Simionovich, nirs@cloudonix.io
  * @license MIT
  * @module cloudonix-js/verbs/gather
  * @description Implements the Gather verb for collecting user input

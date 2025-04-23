@@ -1,6 +1,6 @@
 /**
  * @file Debug script for the System element
- * @copyright 2025 Cloudonix, Inc.
+ * @copyright 2025 Nir Simionovich, nirs@cloudonix.io
  * @license MIT
  */
 

@@ -1,6 +1,6 @@
 /**
  * @file Fix the System/s tag issue with a direct replacement approach
- * @copyright 2025 Cloudonix, Inc.
+ * @copyright 2025 Nir Simionovich, nirs@cloudonix.io
  * @license MIT
  */
 

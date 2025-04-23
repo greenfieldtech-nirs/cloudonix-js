@@ -1,6 +1,6 @@
 /**
  * @file Main exports for the cloudonix-js package
- * @copyright 2025 Cloudonix, Inc.
+ * @copyright 2025 Nir Simionovich, nirs@cloudonix.io
  * @license MIT
  * @module cloudonix-js/cxml
  * @description Exports all components of the cloudonix-js package

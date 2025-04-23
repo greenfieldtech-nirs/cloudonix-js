@@ -1,6 +1,6 @@
 /**
  * @file Dial verb implementation
- * @copyright 2025 Cloudonix, Inc.
+ * @copyright 2025 Nir Simionovich, nirs@cloudonix.io
  * @license MIT
  * @module cloudonix-js/verbs/dial
  * @description Implements the Dial verb for making outbound calls

@@ -1,6 +1,6 @@
 /**
  * @file Reject verb implementation
- * @copyright 2025 Cloudonix, Inc.
+ * @copyright 2025 Nir Simionovich, nirs@cloudonix.io
  * @license MIT
  * @module cloudonix-js/verbs/reject
  * @description Implements the Reject verb for rejecting incoming calls

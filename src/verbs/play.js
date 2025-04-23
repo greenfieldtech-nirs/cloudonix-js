@@ -1,6 +1,6 @@
 /**
  * @file Play verb implementation
- * @copyright 2025 Cloudonix, Inc.
+ * @copyright 2025 Nir Simionovich, nirs@cloudonix.io
  * @license MIT
  * @module cloudonix-js/verbs/play
  * @description Implements the Play verb for audio playback

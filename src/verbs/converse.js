@@ -1,6 +1,6 @@
 /**
  * @file Converse verb implementation
- * @copyright 2025 Cloudonix, Inc.
+ * @copyright 2025 Nir Simionovich, nirs@cloudonix.io
  * @license MIT
  * @module cloudonix-js/verbs/converse
  * @description Implements the Converse verb for AI voice agent interactions

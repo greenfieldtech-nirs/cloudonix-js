@@ -1,6 +1,6 @@
 /**
  * @file Stream noun implementation for Start verb
- * @copyright 2025 Cloudonix, Inc.
+ * @copyright 2025 Nir Simionovich, nirs@cloudonix.io
  * @license MIT
  * @module cloudonix-js/verbs/startNouns/stream
  * @description Implements the Stream noun for streaming audio

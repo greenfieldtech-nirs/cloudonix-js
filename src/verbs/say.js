@@ -1,6 +1,6 @@
 /**
  * @file Say verb implementation
- * @copyright 2025 Cloudonix, Inc.
+ * @copyright 2025 Nir Simionovich, nirs@cloudonix.io
  * @license MIT
  * @module cloudonix-js/verbs/say
  * @description Implements the Say verb for text-to-speech

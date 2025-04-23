@@ -1,6 +1,6 @@
 /**
  * @file Speech noun implementation for Converse verb
- * @copyright 2025 Cloudonix, Inc.
+ * @copyright 2025 Nir Simionovich, nirs@cloudonix.io
  * @license MIT
  * @module cloudonix-js/verbs/converseNouns/speech
  * @description Implements the Speech noun for Converse verb

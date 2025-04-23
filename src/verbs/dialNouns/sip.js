@@ -1,6 +1,6 @@
 /**
  * @file Sip noun implementation for Dial verb
- * @copyright 2025 Cloudonix, Inc.
+ * @copyright 2025 Nir Simionovich, nirs@cloudonix.io
  * @license MIT
  * @module cloudonix-js/verbs/dialNouns/sip
  * @description Implements the Sip noun for dialing SIP endpoints

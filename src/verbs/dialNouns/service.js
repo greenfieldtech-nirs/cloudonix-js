@@ -1,6 +1,6 @@
 /**
  * @file Service noun implementation for Dial verb
- * @copyright 2025 Cloudonix, Inc.
+ * @copyright 2025 Nir Simionovich, nirs@cloudonix.io
  * @license MIT
  * @module cloudonix-js/verbs/dialNouns/service
  * @description Implements the Service noun for connecting to service endpoints

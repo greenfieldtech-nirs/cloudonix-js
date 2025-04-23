@@ -1,6 +1,6 @@
 /**
  * @file Record verb implementation
- * @copyright 2025 Cloudonix, Inc.
+ * @copyright 2025 Nir Simionovich, nirs@cloudonix.io
  * @license MIT
  * @module cloudonix-js/verbs/record
  * @description Implements the Record verb for recording audio from callers

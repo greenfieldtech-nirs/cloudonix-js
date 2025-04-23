@@ -1,6 +1,6 @@
 /**
  * @file User noun implementation for Converse verb
- * @copyright 2025 Cloudonix, Inc.
+ * @copyright 2025 Nir Simionovich, nirs@cloudonix.io
  * @license MIT
  * @module cloudonix-js/verbs/converseNouns/user
  * @description Implements the User noun for Converse verb

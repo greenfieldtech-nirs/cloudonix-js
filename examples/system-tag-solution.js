@@ -1,6 +1,6 @@
 /**
  * @file Solution to System tag rendering issue
- * @copyright 2025 Cloudonix, Inc.
+ * @copyright 2025 Nir Simionovich, nirs@cloudonix.io
  * @license MIT
  */
 

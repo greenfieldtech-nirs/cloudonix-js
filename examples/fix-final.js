@@ -1,6 +1,6 @@
 /**
  * Apply the final fix for Converse System tags
- * @copyright 2025 Cloudonix, Inc.
+ * @copyright 2025 Nir Simionovich, nirs@cloudonix.io
  * @license MIT
  */
 
@@ -25,7 +25,7 @@ console.log('✅ Updated converse.js to use type "s" for System elements');
 const monkeyPatchPath = path.join('/Users/nirs/Documents/repos/cloudonix-js/src/system-tag-fix.js');
 const monkeyPatchCode = `/**
  * @file System tag fix for Converse verb
- * @copyright 2025 Cloudonix, Inc.
+ * @copyright 2025 Nir Simionovich, nirs@cloudonix.io
  * @license MIT
  * @module cloudonix-js/system-tag-fix
  * @description Applies a fix to render System elements correctly
@@ -100,7 +100,7 @@ if (!indexCode.includes('system-tag-fix')) {
 const testPath = path.join('/Users/nirs/Documents/repos/cloudonix-js/examples/test-system-fix.js');
 const testCode = `/**
  * @file Test for System tag fix
- * @copyright 2025 Cloudonix, Inc.
+ * @copyright 2025 Nir Simionovich, nirs@cloudonix.io
  * @license MIT
  */
 

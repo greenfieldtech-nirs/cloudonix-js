@@ -1,6 +1,6 @@
 /**
  * @file Main entry point for the cloudonix-js package
- * @copyright 2025 Cloudonix, Inc.
+ * @copyright 2025 Nir Simionovich, nirs@cloudonix.io
  * @license MIT
  * @version 1.0.0
  * @module cloudonix-js

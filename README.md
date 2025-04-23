@@ -1,6 +1,17 @@
 # cloudonix-js
 A JavaScript library for building and serving Cloudonix Voice Application XML (CXML) documents.
 
+```
+## Vibe-Code Disclaimer ##
+
+This library was creatd using claude-code and the documentation available 
+at https://developers.cloudonix.com
+
+While the library is tested to produce working results, it is up to you 
+to make sure that it works for you, as I may no guarentees as to the quality
+of this source code - I didn't write it! 
+```
+
 ## Installation
 
 ```bash

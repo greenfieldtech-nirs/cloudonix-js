@@ -1,6 +1,6 @@
 /**
  * @file CXML Builder implementation
- * @copyright 2025 Cloudonix, Inc.
+ * @copyright 2025 Nir Simionovich, nirs@cloudonix.io
  * @license MIT
  * @module cloudonix-js/builder
  * @description Provides a fluent API for building CXML documents
