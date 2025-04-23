@@ -63,11 +63,44 @@ function createAdvancedRecordingFlow() {
     });
 }
 
+/**
+ * Creates a recording flow with nested verbs using the callback pattern
+ * @returns {CXMLBuilder} - CXML builder with nested verbs in the Record
+ */
+function createNestedRecordingFlow() {
+  return new CXMLBuilder()
+    .createResponse()
+    // Recording with nested verbs using callback pattern
+    .addRecord({
+      action: "/handle-recording",
+      method: "POST",
+      timeout: 5,
+      maxLength: 60,
+      playBeep: false,  // We'll play our own beep sound
+      finishOnKey: "#"
+    }, (cxml) => {
+      cxml
+        .addSay("Please leave a message after the tone.", {
+          voice: "Google:en-US-Neural2-F",
+          language: "en-US"
+        })
+        .addPause(1)
+        .addPlay("https://example.com/sounds/beep.wav")
+        .addPause(0.5);
+    });
+}
+
 // Run as standalone script if invoked directly
 if (require.main === module) {
   // If running as a script, just output the XML
-  const cxml = createSimpleRecordingFlow().build();
-  console.log(cxml);
+  console.log('Simple Recording:');
+  console.log(createSimpleRecordingFlow().build());
+  
+  console.log('\nAdvanced Recording:');
+  console.log(createAdvancedRecordingFlow().build());
+  
+  console.log('\nNested Recording:');
+  console.log(createNestedRecordingFlow().build());
   
   // Run the server if the --server flag is passed
   if (process.argv.includes('--server')) {
@@ -77,7 +110,8 @@ if (require.main === module) {
   // Export the functions for use in other modules
   module.exports = {
     createSimpleRecordingFlow,
-    createAdvancedRecordingFlow
+    createAdvancedRecordingFlow,
+    createNestedRecordingFlow
   };
 }
 
@@ -101,6 +135,11 @@ function runServer() {
   // Advanced recording route
   server.route('/advanced-recording', async (context) => {
     return createAdvancedRecordingFlow();
+  });
+  
+  // Nested recording route
+  server.route('/nested-recording', async (context) => {
+    return createNestedRecordingFlow();
   });
   
   // Handle recording completion
@@ -165,7 +204,7 @@ function runServer() {
     return new CXMLBuilder().createResponse();
   });
   
-  // Home page with links to both demos
+  // Home page with links to all demos
   server.route('/', async (context) => {
     // Return a simple HTML page instead of CXML since this is for browser navigation
     context.setHeader('Content-Type', 'text/html; charset=utf-8');
@@ -189,6 +228,7 @@ function runServer() {
           
           <a href="/simple-recording">Simple Recording Example</a>
           <a href="/advanced-recording">Advanced Recording with Transcription</a>
+          <a href="/nested-recording">Nested Recording with Verbs</a>
           
           <h2>How It Works</h2>
           <p>These examples demonstrate how to use the Record verb in Cloudonix CXML. In a real telephony application, these would record actual audio from the caller.</p>
@@ -222,6 +262,27 @@ function runServer() {
   recordingStatusCallbackEvent: "in-progress completed",
   trim: "trim-silence",
   fileFormat: "mp3"
+})
+          </pre>
+          
+          <h3>Nested Recording Example Code:</h3>
+          <pre>
+.addRecord({
+  action: "/handle-recording",
+  method: "POST",
+  timeout: 5,
+  maxLength: 60,
+  playBeep: false,  // We'll play our own beep sound
+  finishOnKey: "#"
+}, (cxml) => {
+  cxml
+    .addSay("Please leave a message after the tone.", {
+      voice: "Google:en-US-Neural2-F",
+      language: "en-US"
+    })
+    .addPause(1)
+    .addPlay("https://example.com/sounds/beep.wav")
+    .addPause(0.5);
 })
           </pre>
         </body>

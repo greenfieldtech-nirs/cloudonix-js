@@ -8,9 +8,88 @@
 
 'use strict';
 
+const SayVerb = require('./say');
+const PlayVerb = require('./play');
+const PauseVerb = require('./pause');
+
+/**
+ * RecordBuilder class for building the Record verb with its nested elements
+ * Note: Record can contain Say, Play, and Pause verbs as nested elements
+ */
+class RecordBuilder {
+  constructor(cxmlBuilder, recordElement) {
+    this.cxmlBuilder = cxmlBuilder;
+    this.recordElement = recordElement;
+    
+    // Initialize cxml property if it doesn't exist
+    if (!this.recordElement.cxml) {
+      this.recordElement.cxml = [];
+    }
+  }
+  
+  /**
+   * Add a Say element to the Record
+   * @param {string} text - The text to be spoken
+   * @param {Object} options - Optional parameters for the Say element
+   * @param {string} options.voice - The voice to use for TTS
+   * @param {string} options.language - The language of the text
+   * @returns {RecordBuilder} - The builder instance for chaining
+   */
+  addSay(text, options = {}) {
+    const sayElement = SayVerb.create(text, options);
+    this.recordElement.cxml.push({
+      type: 'Say',
+      element: sayElement
+    });
+    return this;
+  }
+  
+  /**
+   * Add a Play element to the Record
+   * @param {string} url - The URL of the audio file to play
+   * @param {Object} options - Optional parameters for the Play element
+   * @returns {RecordBuilder} - The builder instance for chaining
+   */
+  addPlay(url, options = {}) {
+    const playElement = PlayVerb.create(url, options);
+    this.recordElement.cxml.push({
+      type: 'Play',
+      element: playElement
+    });
+    return this;
+  }
+  
+  /**
+   * Add a Pause element to the Record
+   * @param {number} length - The length of the pause in seconds
+   * @param {Object} options - Optional parameters for the Pause element
+   * @returns {RecordBuilder} - The builder instance for chaining
+   */
+  addPause(length, options = {}) {
+    const pauseElement = PauseVerb.create(length, options);
+    this.recordElement.cxml.push({
+      type: 'Pause',
+      element: pauseElement
+    });
+    return this;
+  }
+  
+  /**
+   * Return to the parent CXML builder
+   * @returns {CXMLBuilder} - The parent CXML builder
+   */
+  done() {
+    return this.cxmlBuilder;
+  }
+}
+
+/**
+ * Record verb module
+ */
 module.exports = {
   /**
-   * Create a Record element
+   * Create a Record element with optional RecordBuilder
+   * @param {CXMLBuilder} cxmlBuilder - The parent CXML builder
    * @param {Object} options - Configuration for the Record element
    * @param {boolean} options.answer - Whether to answer the call before recording (true/false)
    * @param {string} options.action - URL to which the recording information will be sent
@@ -28,10 +107,10 @@ module.exports = {
    * @param {string} options.recordingStatusCallbackEvent - Events to trigger callbacks
    * @param {string} options.trim - How to trim silence (trim, trim-silence, do-not-trim)
    * @param {string} options.fileFormat - Format of the recording (mp3, wav)
-   * @returns {Object} - The Record element
+   * @returns {Object} - Object containing the Record element and RecordBuilder
    */
-  create: (options = {}) => {
-    const recordElement = {};
+  create: (cxmlBuilder, options = {}) => {
+    const recordElement = { cxml: [] };
     
     // Add all supported attributes
     if (options.answer !== undefined) {
@@ -98,6 +177,12 @@ module.exports = {
       recordElement['@_fileFormat'] = options.fileFormat;
     }
     
-    return recordElement;
-  }
+    // Create a RecordBuilder for adding nested elements
+    const builder = new RecordBuilder(cxmlBuilder, recordElement);
+    
+    return { element: recordElement, builder };
+  },
+  
+  // Export the RecordBuilder class for direct use if needed
+  RecordBuilder
 };

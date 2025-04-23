@@ -11,10 +11,13 @@ npm install cloudonix-js
 
 - Build CXML documents using a fluent API with proper indentation
 - Serve CXML documents via HTTP
-- Support for all CXML verbs (Response, Play, Say, Gather, Redirect, Hangup, Dial, Pause, Reject, Record, Coach)
+- Support for all CXML verbs (Response, Play, Say, Gather, Redirect, Hangup, Dial, Pause, Reject, Record, Coach, Start, Converse)
 - Support for Dial nouns (Number, Sip, Conference, Service, Header)
+- Support for Start noun (Stream)
+- Support for Converse nouns (Tool, System, User, Speech, Description)
 - Nested elements with proper ordering and inheritance
 - Well-formatted XML output with correct indentation
+- Consistent handling of nested elements with the `cxml` attribute
 
 ## Usage
 
@@ -50,25 +53,29 @@ const sayXml = new CXMLBuilder()
 
 console.log(sayXml);
 
-// Build a document with nested elements using Gather and Dial
+// Build a document with nested elements using callback pattern
 const complexXml = new CXMLBuilder()
   .createResponse()
   .addSay('Welcome to our service')
+  // Use the callback pattern for nesting
   .addGather({
     input: 'dtmf speech',
     timeout: 5,
     numDigits: 1
+  }, cxml => {
+    cxml.addSay('Please press 1 for sales')
+        .addSay('Please press 2 for support')
+        .addPlay('https://example.com/beep.wav');
   })
-  .addSay('Please press 1 for sales')
-  .addSay('Please press 2 for support')
-  .done() // Important: 'done()' terminates the nested Gather builder
   .addDial({
     timeout: 30,
     callerId: '+15551234567'
+  }, cxml => {
+    // Headers are always added first
+    cxml.addHeader('X-Department', 'sales')
+        .addNumber('+18005551212');
   })
-  .addNumber('+18005551212')
-  .addHeader('X-Department', 'sales')
-  .done() // Important: 'done()' terminates the nested Dial builder
+  .addHangup()
   .build();
 
 console.log(complexXml);
@@ -222,7 +229,7 @@ Parameters:
   - `statusCallback`: URL to notify about say status
   - `statusCallbackMethod`: HTTP method for status callbacks (GET/POST)
 
-#### `addGather(options)`
+#### `addGather(options, cxml)`
 
 Adds a Gather element to collect input from the caller.
 
@@ -241,20 +248,31 @@ Parameters:
   - `maxDuration`: Maximum duration in seconds
   - `speechDetection`: Speech detection settings
   - `interruptible`: Whether gathering can be interrupted
+- `cxml`: Optional callback function for defining nested elements
 
-Returns a nested builder with:
+If using the callback function approach, the `cxml` object provides:
 - `addSay(text, options)`: Add a Say element inside the Gather
 - `addPlay(url, options)`: Add a Play element inside the Gather
-- `addPause(length)`: Add a Pause element inside the Gather
-- `done()`: Finish the Gather and return to the main builder
+- `addPause(length, options)`: Add a Pause element inside the Gather
 
-#### `addDial(numberOrOptions, options)`
+Example using the callback pattern:
+```javascript
+.addGather({
+  input: 'dtmf',
+  timeout: 5
+}, cxml => {
+  cxml.addSay('Please press a key', { voice: 'woman' })
+      .addPlay('https://example.com/beep.wav')
+      .addPause(1);
+})
+```
+
+#### `addDial(options, cxml)` or `addDial(phoneNumber, cxml)`
 
 Adds a Dial element to make an outbound call.
 
 Parameters:
-- `numberOrOptions`: Either a phone number to dial or options object
-- `options`: Optional parameters for the Dial element
+- `options`: Configuration for the Dial element
   - `action`: URL to send the call result to
   - `callerId`: Caller ID to use
   - `callerName`: Caller name to use
@@ -271,14 +289,29 @@ Parameters:
   - `timeout`: How long to wait for an answer
   - `trim`: How to trim recordings
   - `trunks`: Number of trunks to use
+- `cxml`: Optional callback function for defining nested elements
 
-Returns a nested builder with:
-- `addNumber(number)`: Add a Number element
-- `addSip(sipUri, options)`: Add a SIP endpoint
-- `addConference(name, options)`: Add a conference
-- `addService(serviceNumber, options)`: Add a service
-- `addHeader(name, value)`: Add a header
-- `done()`: Finish the Dial and return to the main builder
+If `phoneNumber` is provided instead of `options`, it will be used as the number to dial.
+
+If using the callback function approach, the `cxml` object provides:
+- `addHeader(name, value)`: Add a Header element (should be called first)
+- `addNumber(number, options)`: Add a Number element (mutually exclusive)
+- `addSip(sipUri, options)`: Add a SIP endpoint (mutually exclusive)
+- `addConference(name, options)`: Add a conference (mutually exclusive)
+- `addService(serviceNumber, options)`: Add a service (mutually exclusive)
+
+Note: With the exception of Header, the other nouns (Number, Sip, Conference, Service) are mutually exclusive - you can only use one per Dial element.
+
+Example using the callback pattern:
+```javascript
+.addDial({
+  callerId: '+15551234567',
+  timeout: 30
+}, cxml => {
+  cxml.addHeader('X-Custom-Header', 'CustomValue')
+      .addNumber('+15559876543');
+})
+```
 
 #### `addRedirect(url, method)`
 
@@ -309,7 +342,7 @@ Parameters:
 - `options`: Optional parameters for the Reject element
   - `reason`: Reason for rejection (busy, rejected)
 
-#### `addRecord(options)`
+#### `addRecord(options, cxml)`
 
 Adds a Record element to record audio from the caller.
 
@@ -331,6 +364,26 @@ Parameters:
   - `recordingStatusCallbackEvent`: Events to trigger callbacks
   - `trim`: How to trim silence (trim, trim-silence, do-not-trim)
   - `fileFormat`: Format of the recording (mp3, wav)
+- `cxml`: Optional callback function for defining nested elements
+
+If using the callback function approach, the `cxml` object provides:
+- `addSay(text, options)`: Add a Say element inside the Record
+- `addPlay(url, options)`: Add a Play element inside the Record
+- `addPause(length, options)`: Add a Pause element inside the Record
+
+Example using the callback pattern:
+```javascript
+.addRecord({
+  action: '/handle-recording',
+  method: 'POST',
+  maxLength: 60,
+  playBeep: false  // We'll play our own beep sound
+}, cxml => {
+  cxml.addSay('Please leave a message after the tone.')
+      .addPause(1)
+      .addPlay('https://example.com/sounds/beep.wav');
+})
+```
 
 #### `addCoach(phoneNumber, options)`
 
@@ -353,6 +406,105 @@ Parameters:
   - `recordingStatusCallback`: URL for recording status callbacks
   - `recordingStatusCallbackMethod`: HTTP method for recording status callback
   - `recordingStatusCallbackEvent`: Events to trigger recording callbacks
+
+#### `addStart(cxml)`
+
+Adds a Start element to initiate an asynchronous operation like media streaming.
+
+Parameters:
+- `cxml`: Callback function for defining nested elements
+
+If using the callback function approach, the `cxml` object provides:
+- `addStream(options)`: Add a Stream element inside the Start
+
+The `addStream` method accepts these parameters:
+- `options`: Configuration options for the Stream
+  - `url`: WebSocket URL (required)
+  - `name`: Unique name for the stream (for stopping it later)
+  - `track`: Which track to stream ('inbound_track', 'outbound_track', 'both_tracks')
+  - `statusCallback`: URL for stream status callbacks
+  - `statusCallbackMethod`: HTTP method for status callbacks (GET/POST)
+
+Example using the callback pattern:
+```javascript
+.addStart(cxml => {
+  cxml.addStream({
+    url: "wss://example.com/media-stream",
+    name: "my-stream",
+    track: "both_tracks"
+  });
+})
+```
+
+#### `addConverse(options, cxml)`
+
+Adds a Converse element to create an AI voice agent using LLM, TTS, and STT.
+
+Parameters:
+- `options`: Configuration for the Converse element
+  - `voice`: TTS voice to use (e.g., 'Google:en-US-Neural2-F')
+  - `language`: Language code (e.g., 'en-US')
+  - `statusCallback`: URL for status updates
+  - `statusCallbackMethod`: HTTP method for callbacks (GET/POST)
+  - `statusCallbackEvent`: Events to trigger callbacks ('in-progress', 'tool-response', 'llm-response', 'completed')
+  - `sessionTools`: Built-in tools to enable ('hangup', 'redirect', 'dial')
+  - `model`: LLM model to use (e.g., 'openai:gpt-4o-mini', 'anthropic:claude-3-5-haiku-latest')
+  - `context`: Context handling ('auto', 'none', 'no')
+  - `temperature`: Sampling temperature for LLM (0-1)
+- `cxml`: Callback function for defining nested elements
+
+If using the callback function approach, the `cxml` object provides:
+- `addTool(name, url, options)`: Add a Tool element to the Converse
+  - Returns a tool builder with:
+    - `addParameter(name, options)`: Add a Parameter to the Tool
+    - `addDescription(text)`: Add a Description to the Tool
+    - `done()`: Return to the main Converse builder
+- `addSystem(text)`: Add a System prompt element
+- `addUser(text)`: Add a User prompt element
+- `addSpeech()`: Add a Speech element (must be last element when used in Gather)
+
+Example using the callback pattern:
+```javascript
+.addConverse({
+  voice: "Google:en-US-Neural2-F", 
+  language: "en-US",
+  model: "openai:gpt-4o-mini"
+}, cxml => {
+  // Add a tool
+  cxml.addTool("contactLookUp", "https://example.com/contactLookUp")
+    .addDescription("Search a contact in our database")
+    .addParameter("From")
+    .addParameter("To")
+    .done();
+    
+  // Add system prompt
+  cxml.addSystem("You are a helpful AI assistant.");
+  
+  // Add a user message
+  cxml.addUser("Hello, can you help me?");
+  
+  // Add speech input from caller (when used with Gather)
+  cxml.addSpeech();
+})
+```
+
+Example with Gather:
+```javascript
+.addGather({
+  input: "speech",
+  speechEngine: "google",
+  speechTimeout: 1.5,
+  speechDetection: "stt"
+}, gatherCxml => {
+  gatherCxml.addConverse({
+    voice: "Google:en-US-Neural2-F", 
+    language: "en-US"
+  }, converseCxml => {
+    converseCxml.addSystem("You are a helpful voice agent.");
+    converseCxml.addSpeech();
+  });
+})
+```
 
 #### `build()`
 
@@ -413,6 +565,43 @@ The library includes several examples in the `examples/` directory:
 - `coach-example.js`: Example of coaching a call
 - `call-center-coaching-example.js`: Complete call center scenario with coaching
 - `nested-record-play-gather-example.js`: Example with nested Record, Play, and Gather elements
+- `start-stream-example.js`: Example of media streaming with the Start and Stream elements
+- `converse-example.js`: Example of AI voice agents with the Converse verb
+
+## New Features
+
+### Callback-Based Nesting
+
+The library now supports a callback-based approach for defining nested elements, which provides several benefits:
+
+1. **More intuitive nesting syntax**: The callback pattern visually represents the XML hierarchy in your code
+2. **Simplified API**: No need to call `.done()` to return to the parent builder
+3. **Consistent method naming**: Uses the same method names at all nesting levels
+4. **Proper CXML structure**: Automatically handles element ordering rules (e.g., Headers before other nouns in Dial)
+
+Example:
+```javascript
+// Old approach with .done()
+builder.addGather(options)
+  .addSay("Press a key")
+  .addPlay("beep.wav")
+  .done() // Must remember to call done()
+  .addHangup();
+
+// New callback-based approach
+builder.addGather(options, cxml => {
+  cxml.addSay("Press a key")
+      .addPlay("beep.wav");
+})
+.addHangup();
+```
+
+### Improved Element Consistency
+
+All verbs now use a consistent implementation pattern:
+1. Each verb module has a `create()` method that generates the element structure
+2. All nested verbs use the same method signatures as their top-level counterparts
+3. Options are processed the same way at all nesting levels
 
 ## Limitations and Future Work
 
@@ -423,6 +612,8 @@ While the library is functional, there are still some areas that could be improv
 2. **Production-ready server:** The included CXMLServer is suitable for development and testing only. For production use, consider integrating with a more robust server framework like Express.js.
 
 3. **Advanced features:** Some advanced telephony features might be added in future versions, such as better conference controls, additional speech recognition options, and more.
+
+4. **TypeScript support:** Adding TypeScript type definitions would improve developer experience and catch errors earlier.
 
 ## License
 

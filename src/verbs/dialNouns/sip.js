@@ -35,5 +35,24 @@ module.exports = {
     if (options.domain) sipElement['@_domain'] = options.domain;
     
     dialElement.Sip.push(sipElement);
+  },
+  
+  /**
+   * Create a SIP element
+   * @param {string} sipUri - The SIP URI to dial
+   * @param {Object} options - Options for the SIP element
+   * @param {string} options.username - SIP authentication username
+   * @param {string} options.password - SIP authentication password
+   * @param {string} options.domain - From domain ('origin' or 'destination')
+   * @returns {Object} - The SIP element
+   */
+  create: (sipUri, options = {}) => {
+    const sipElement = { '#text': sipUri };
+    
+    if (options.username) sipElement['@_username'] = options.username;
+    if (options.password) sipElement['@_password'] = options.password;
+    if (options.domain) sipElement['@_domain'] = options.domain;
+    
+    return sipElement;
   }
 };

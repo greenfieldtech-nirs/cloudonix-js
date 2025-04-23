@@ -1,7 +1,7 @@
 {
   "name": "cloudonix-js",
-  "version": "1.0.0",
-  "description": "A JavaScript library for building and serving Cloudonix Voice Application XML (CXML) documents",
+  "version": "1.3.1",
+  "description": "A JavaScript library for building and serving Cloudonix Voice Application XML (CXML) documents with support for AI voice agents, media streaming, and advanced telephony features",
   "main": "index.js",
   "directories": {
     "test": "test"
@@ -16,7 +16,12 @@
     "cxml",
     "voice",
     "telephony",
-    "voip"
+    "voip",
+    "ai",
+    "streaming",
+    "llm",
+    "voice-agent",
+    "conversational-ai"
   ],
   "author": "",
   "license": "MIT",

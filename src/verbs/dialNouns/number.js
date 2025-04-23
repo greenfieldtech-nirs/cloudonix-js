@@ -25,5 +25,15 @@ module.exports = {
     }
     
     dialElement.Number.push(number);
+  },
+  
+  /**
+   * Create a Number element
+   * @param {string} number - The phone number to dial
+   * @param {Object} options - Options for the Number element (not used currently)
+   * @returns {Object} - The Number element
+   */
+  create: (number, options = {}) => {
+    return { '#text': number };
   }
 };

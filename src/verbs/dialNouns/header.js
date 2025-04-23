@@ -31,5 +31,18 @@ module.exports = {
     };
     
     dialElement.Header.push(headerElement);
+  },
+  
+  /**
+   * Create a Header element
+   * @param {string} name - The header name
+   * @param {string} value - The header value
+   * @returns {Object} - The Header element
+   */
+  create: (name, value) => {
+    return {
+      '@_name': name,
+      '@_value': value
+    };
   }
 };

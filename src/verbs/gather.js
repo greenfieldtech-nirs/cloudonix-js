@@ -8,13 +8,24 @@
 
 'use strict';
 
+const SayVerb = require('./say');
+const PlayVerb = require('./play');
+const PauseVerb = require('./pause');
+const ConverseVerb = require('./converse');
+
 /**
  * GatherBuilder class for building the Gather verb with its nested elements
+ * Note: Gather can contain Say, Play, Pause, and Converse verbs as nested elements
  */
 class GatherBuilder {
   constructor(cxmlBuilder, gatherElement) {
     this.cxmlBuilder = cxmlBuilder;
     this.gatherElement = gatherElement;
+    
+    // Initialize cxml property if it doesn't exist
+    if (!this.gatherElement.cxml) {
+      this.gatherElement.cxml = [];
+    }
   }
   
   /**
@@ -26,89 +37,106 @@ class GatherBuilder {
    * @returns {GatherBuilder} - The builder instance for chaining
    */
   addSay(text, options = {}) {
-    if (!this.gatherElement.Say) {
-      this.gatherElement.Say = [];
-    }
-    
-    if (!Array.isArray(this.gatherElement.Say)) {
-      this.gatherElement.Say = [this.gatherElement.Say];
-    }
-    
-    const sayElement = { '#text': text };
-    
-    if (options.voice) {
-      sayElement['@_voice'] = options.voice;
-    }
-    
-    if (options.language) {
-      sayElement['@_language'] = options.language;
-    }
-    
-    this.gatherElement.Say.push(sayElement);
+    const sayElement = SayVerb.create(text, options);
+    this.gatherElement.cxml.push({
+      type: 'Say',
+      element: sayElement
+    });
     return this;
   }
   
   /**
    * Add a Play element to the Gather
    * @param {string} url - The URL of the audio file to play
+   * @param {Object} options - Optional parameters for the Play element
    * @returns {GatherBuilder} - The builder instance for chaining
    */
-  addPlay(url) {
-    if (!this.gatherElement.Play) {
-      this.gatherElement.Play = [];
-    }
-    
-    if (!Array.isArray(this.gatherElement.Play)) {
-      this.gatherElement.Play = [this.gatherElement.Play];
-    }
-    
-    this.gatherElement.Play.push(url);
+  addPlay(url, options = {}) {
+    const playElement = PlayVerb.create(url, options);
+    this.gatherElement.cxml.push({
+      type: 'Play',
+      element: playElement
+    });
     return this;
   }
   
   /**
    * Add a Pause element to the Gather
    * @param {number} length - The length of the pause in seconds
+   * @param {Object} options - Optional parameters for the Pause element
    * @returns {GatherBuilder} - The builder instance for chaining
    */
-  addPause(length) {
-    if (!this.gatherElement.Pause) {
-      this.gatherElement.Pause = [];
-    }
-    
-    if (!Array.isArray(this.gatherElement.Pause)) {
-      this.gatherElement.Pause = [this.gatherElement.Pause];
-    }
-    
-    const pauseElement = {};
-    if (length) {
-      pauseElement['@_length'] = length;
-    }
-    
-    this.gatherElement.Pause.push(pauseElement);
+  addPause(length, options = {}) {
+    const pauseElement = PauseVerb.create(length, options);
+    this.gatherElement.cxml.push({
+      type: 'Pause',
+      element: pauseElement
+    });
     return this;
   }
   
   /**
    * Add a Converse element to the Gather
-   * @param {string} text - The text for the conversation
-   * @param {Object} options - Optional parameters for the Converse element
+   * @param {Object} options - Configuration for the Converse element
+   * @param {Function} [cxml] - Callback function for defining nested elements
    * @returns {GatherBuilder} - The builder instance for chaining
    */
-  addConverse(text, options = {}) {
-    if (!this.gatherElement.Converse) {
-      this.gatherElement.Converse = [];
+  addConverse(options = {}, cxml) {
+    // Create the Converse element and builder
+    const { element, builder } = ConverseVerb.create(this.cxmlBuilder, options);
+    
+    // Add the Converse element to the Gather's cxml array
+    this.gatherElement.cxml.push({
+      type: 'Converse',
+      element: element
+    });
+    
+    // If a callback was provided, handle the nested elements
+    if (typeof cxml === 'function') {
+      const converseCxml = {
+        // Tool noun
+        addTool: (name, url, toolOptions = {}) => {
+          const toolBuilder = builder.addTool(name, url, toolOptions);
+          
+          // Return a tool object with parameter and description methods
+          const toolObj = {
+            addParameter: (paramName, paramOptions = {}) => {
+              toolBuilder.addParameter(paramName, paramOptions);
+              return toolObj;
+            },
+            addDescription: (description) => {
+              toolBuilder.addDescription(description);
+              return toolObj;
+            },
+            done: () => converseCxml
+          };
+          
+          return toolObj;
+        },
+        
+        // System noun (s)
+        addSystem: (text) => {
+          builder.addSystem(text);
+          return converseCxml;
+        },
+        
+        // User noun
+        addUser: (text) => {
+          builder.addUser(text);
+          return converseCxml;
+        },
+        
+        // Speech noun
+        addSpeech: () => {
+          builder.addSpeech();
+          return converseCxml;
+        }
+      };
+      
+      // Execute the callback with the cxml object
+      cxml(converseCxml);
     }
     
-    if (!Array.isArray(this.gatherElement.Converse)) {
-      this.gatherElement.Converse = [this.gatherElement.Converse];
-    }
-    
-    const converseElement = { '#text': text };
-    
-    // Add converse attributes here as they become available in the documentation
-    
-    this.gatherElement.Converse.push(converseElement);
     return this;
   }
   
@@ -146,7 +174,7 @@ module.exports = {
    * @returns {Object} - Object containing the Gather element and GatherBuilder
    */
   create: (cxmlBuilder, options = {}) => {
-    const gatherElement = {};
+    const gatherElement = { cxml: [] };
     
     // Add all supported attributes from options
     if (options.action) gatherElement['@_action'] = options.action;

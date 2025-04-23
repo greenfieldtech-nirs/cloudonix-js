@@ -11,6 +11,18 @@
 const CXMLBuilder = require('./builder');
 const CXMLServer = require('./server');
 
+// Patch CXMLBuilder to fix the System tag rendering issue
+const originalBuild = CXMLBuilder.prototype.build;
+CXMLBuilder.prototype.build = function() {
+  // Call the original method
+  let xml = originalBuild.call(this);
+  
+  // Replace <s> with <System>
+  xml = xml.replace(/<s>/g, '<System>').replace(/<\/s>/g, '</System>');
+  
+  return xml;
+};
+
 /**
  * @namespace cloudonix-js
  * @property {Class} CXMLBuilder - The CXML document builder

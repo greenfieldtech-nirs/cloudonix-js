@@ -18,6 +18,8 @@ const PauseVerb = require('./verbs/pause');
 const RejectVerb = require('./verbs/reject');
 const RecordVerb = require('./verbs/record');
 const CoachVerb = require('./verbs/coach');
+const StartVerb = require('./verbs/start');
+const ConverseVerb = require('./verbs/converse');
 
 class CXMLBuilder {
   constructor() {
@@ -42,19 +44,24 @@ class CXMLBuilder {
    * @returns {CXMLBuilder} - The builder instance for chaining
    */
   addPlay(url, options = {}) {
-    const attributes = {};
+    // Use the Play verb to create the element
+    const PlayVerb = require('./verbs/play');
+    const playElement = PlayVerb.create(url, options);
     
-    if (options.answer !== undefined) attributes.answer = options.answer;
-    if (options.digits) attributes.digits = options.digits;
-    if (options.loop !== undefined) attributes.loop = options.loop;
-    if (options.statusCallback) attributes.statusCallback = options.statusCallback;
-    if (options.statusCallbackMethod) attributes.statusCallbackMethod = options.statusCallbackMethod;
-    
+    // Add the element to our elements list
     this.elements.push({
       type: 'Play',
-      attributes,
+      attributes: {},
+      element: playElement,
       content: options.digits ? undefined : url
     });
+    
+    // Map attribute properties to our internal format
+    for (const key in playElement) {
+      if (key.startsWith('@_')) {
+        this.elements[this.elements.length - 1].attributes[key.substring(2)] = playElement[key];
+      }
+    }
     
     return this;
   }
@@ -66,20 +73,24 @@ class CXMLBuilder {
    * @returns {CXMLBuilder} - The builder instance for chaining
    */
   addSay(text, options = {}) {
-    const attributes = {};
+    // Use the Say verb to create the element
+    const SayVerb = require('./verbs/say');
+    const sayElement = SayVerb.create(text, options);
     
-    if (options.answer !== undefined) attributes.answer = options.answer;
-    if (options.loop !== undefined) attributes.loop = options.loop;
-    if (options.voice) attributes.voice = options.voice;
-    if (options.language) attributes.language = options.language;
-    if (options.statusCallback) attributes.statusCallback = options.statusCallback;
-    if (options.statusCallbackMethod) attributes.statusCallbackMethod = options.statusCallbackMethod;
-    
+    // Add the element to our elements list
     this.elements.push({
       type: 'Say',
-      attributes,
+      attributes: {},
+      element: sayElement,
       content: text
     });
+    
+    // Map attribute properties to our internal format
+    for (const key in sayElement) {
+      if (key.startsWith('@_')) {
+        this.elements[this.elements.length - 1].attributes[key.substring(2)] = sayElement[key];
+      }
+    }
     
     return this;
   }
@@ -87,79 +98,60 @@ class CXMLBuilder {
   /**
    * Add a Gather element to the Response
    * @param {Object} options - Configuration for the Gather element
-   * @returns {Object} - A builder for nested elements
+   * @param {Function} [cxml] - Callback function for defining nested elements
+   * @returns {CXMLBuilder} - The builder instance for chaining
    */
-  addGather(options = {}) {
-    const gatherId = `gather_${this.elements.length}`;
-    const attributes = {};
+  addGather(options = {}, cxml) {
+    // Use the Gather verb to create the element and builder
+    const GatherVerb = require('./verbs/gather');
     
-    if (options.action) attributes.action = options.action;
-    if (options.method) attributes.method = options.method;
-    if (options.input) attributes.input = options.input;
-    if (options.finishOnKey !== undefined) attributes.finishOnKey = options.finishOnKey;
-    if (options.numDigits) attributes.numDigits = options.numDigits;
-    if (options.maxTimeout) attributes.maxTimeout = options.maxTimeout;
-    if (options.timeout) attributes.timeout = options.timeout;
-    if (options.speechTimeout) attributes.speechTimeout = options.speechTimeout;
-    if (options.speechEngine) attributes.speechEngine = options.speechEngine;
-    if (options.language) attributes.language = options.language;
-    if (options.actionOnEmptyResult !== undefined) attributes.actionOnEmptyResult = options.actionOnEmptyResult;
-    if (options.maxDuration) attributes.maxDuration = options.maxDuration;
-    if (options.speechDetection) attributes.speechDetection = options.speechDetection;
-    if (options.interruptible !== undefined) attributes.interruptible = options.interruptible;
+    // Create the element and builder
+    const { element, builder } = GatherVerb.create(this, options);
     
+    // Add the element to our elements list
     this.elements.push({
       type: 'Gather',
-      attributes,
-      id: gatherId
+      attributes: {},
+      element: element
     });
     
-    // Create a new list for nested elements
-    this.nestedElements.set(gatherId, []);
+    // Map attribute properties to our internal format
+    for (const key in element) {
+      if (key.startsWith('@_')) {
+        this.elements[this.elements.length - 1].attributes[key.substring(2)] = element[key];
+      }
+    }
     
-    // Create the gather builder
-    const gatherBuilder = {
-      addSay: (text, sayOptions = {}) => {
-        const sayAttributes = {};
-        if (sayOptions.voice) sayAttributes.voice = sayOptions.voice;
-        if (sayOptions.language) sayAttributes.language = sayOptions.language;
+    // If a cxml callback is provided, create a temporary object with the available
+    // nested verbs and pass it to the callback
+    if (typeof cxml === 'function') {
+      const gatherCxml = {
+        addSay: (text, sayOptions = {}) => {
+          builder.addSay(text, sayOptions);
+          return gatherCxml;
+        },
         
-        this.nestedElements.get(gatherId).push({
-          type: 'Say',
-          attributes: sayAttributes,
-          content: text
-        });
+        addPlay: (url, playOptions = {}) => {
+          builder.addPlay(url, playOptions);
+          return gatherCxml;
+        },
         
-        return gatherBuilder;
-      },
+        addPause: (length = 1, pauseOptions = {}) => {
+          builder.addPause(length, pauseOptions);
+          return gatherCxml;
+        },
+        
+        addConverse: (converseOptions = {}, converseCxml) => {
+          builder.addConverse(converseOptions, converseCxml);
+          return gatherCxml;
+        }
+      };
       
-      addPlay: (url, playOptions = {}) => {
-        const playAttributes = {};
-        if (playOptions.loop) playAttributes.loop = playOptions.loop;
-        
-        this.nestedElements.get(gatherId).push({
-          type: 'Play',
-          attributes: playAttributes,
-          content: url
-        });
-        
-        return gatherBuilder;
-      },
-      
-      addPause: (length = 1) => {
-        this.nestedElements.get(gatherId).push({
-          type: 'Pause',
-          attributes: { length },
-          content: undefined
-        });
-        
-        return gatherBuilder;
-      },
-      
-      done: () => this
-    };
+      // Execute the callback with the cxml object
+      cxml(gatherCxml);
+    }
     
-    return gatherBuilder;
+    return this;
   }
 
   /**
@@ -194,139 +186,86 @@ class CXMLBuilder {
 
   /**
    * Add a Dial element to the Response
-   * @param {string|Object} numberOrOptions - Phone number to dial or options object
-   * @param {Object} options - Optional parameters for the Dial element
-   * @returns {Object} - A builder for nested elements
+   * @param {Object|string} options - Options for the Dial element or phone number to dial
+   * @param {Function} [cxml] - Callback function for defining nested elements
+   * @returns {CXMLBuilder} - The builder instance for chaining
    */
-  addDial(numberOrOptions = {}, options = {}) {
-    const dialId = `dial_${this.elements.length}`;
-    const attributes = {};
-    let content = undefined;
+  addDial(options = {}, cxml) {
+    // Use the Dial verb to create the element and builder
+    const DialVerb = require('./verbs/dial');
     
-    // Handle the case where first argument is a string (phone number)
-    if (typeof numberOrOptions === 'string') {
-      content = numberOrOptions;
-      options = options || {};
+    // Handle case where first argument is a phone number
+    let dialOptions = {};
+    if (typeof options === 'string') {
+      // Don't create a number option, instead we'll add it directly after creating the element
+      dialOptions = {};
     } else {
-      // First argument is options object
-      options = numberOrOptions || {};
+      dialOptions = options;
     }
     
-    // Add attributes from options
-    if (options.action) attributes.action = options.action;
-    if (options.callerId) attributes.callerId = options.callerId;
-    if (options.callerName) attributes.callerName = options.callerName;
-    if (options.forwardHeaders !== undefined) attributes.forwardHeaders = options.forwardHeaders;
-    if (options.headers) attributes.headers = options.headers;
-    if (options.hangupOnStar !== undefined) attributes.hangupOnStar = options.hangupOnStar;
-    if (options.hangupOn) attributes.hangupOn = options.hangupOn;
-    if (options.method) attributes.method = options.method;
-    if (options.record) attributes.record = options.record;
-    if (options.recordingStatusCallback) attributes.recordingStatusCallback = options.recordingStatusCallback;
-    if (options.recordingStatusCallbackMethod) attributes.recordingStatusCallbackMethod = options.recordingStatusCallbackMethod;
-    if (options.recordingStatusCallbackEvent) attributes.recordingStatusCallbackEvent = options.recordingStatusCallbackEvent;
-    if (options.timeLimit) attributes.timeLimit = options.timeLimit;
-    if (options.timeout) attributes.timeout = options.timeout;
-    if (options.trim) attributes.trim = options.trim;
-    if (options.trunks) attributes.trunks = options.trunks;
+    // Create the element and builder
+    const { element, builder } = DialVerb.create(this, dialOptions);
     
+    // Add the element to our elements list
     this.elements.push({
       type: 'Dial',
-      attributes,
-      content,
-      id: dialId
+      attributes: {},
+      element: element,
+      content: element['#text']
     });
     
-    // Create a new list for nested elements
-    this.nestedElements.set(dialId, []);
+    // Map attribute properties to our internal format
+    for (const key in element) {
+      if (key.startsWith('@_')) {
+        this.elements[this.elements.length - 1].attributes[key.substring(2)] = element[key];
+      }
+    }
     
-    // Create the dial builder
-    const dialBuilder = {
-      addNumber: (number) => {
-        this.nestedElements.get(dialId).push({
-          type: 'Number',
-          attributes: {},
-          content: number
-        });
-        
-        return dialBuilder;
-      },
-      
-      addSip: (sipUri, sipOptions = {}) => {
-        const sipAttributes = {};
-        if (sipOptions.username) sipAttributes.username = sipOptions.username;
-        if (sipOptions.password) sipAttributes.password = sipOptions.password;
-        if (sipOptions.domain) sipAttributes.domain = sipOptions.domain;
-        
-        this.nestedElements.get(dialId).push({
-          type: 'Sip',
-          attributes: sipAttributes,
-          content: sipUri
-        });
-        
-        return dialBuilder;
-      },
-      
-      addConference: (conferenceName, confOptions = {}) => {
-        const confAttributes = {};
-        
-        // Add conference attributes
-        if (confOptions.beep !== undefined) confAttributes.beep = confOptions.beep;
-        if (confOptions.dtmf) confAttributes.dtmf = confOptions.dtmf;
-        if (confOptions.holdMusic !== undefined) confAttributes.holdMusic = confOptions.holdMusic;
-        if (confOptions.muted !== undefined) confAttributes.muted = confOptions.muted;
-        if (confOptions.prompts !== undefined) confAttributes.prompts = confOptions.prompts;
-        if (confOptions.startConferenceOnEnter !== undefined) confAttributes.startConferenceOnEnter = confOptions.startConferenceOnEnter;
-        if (confOptions.endConferenceOnExit !== undefined) confAttributes.endConferenceOnExit = confOptions.endConferenceOnExit;
-        if (confOptions.maxParticipants) confAttributes.maxParticipants = confOptions.maxParticipants;
-        if (confOptions.record) confAttributes.record = confOptions.record;
-        if (confOptions.recordingStatusCallback) confAttributes.recordingStatusCallback = confOptions.recordingStatusCallback;
-        if (confOptions.recordingStatusCallbackMethod) confAttributes.recordingStatusCallbackMethod = confOptions.recordingStatusCallbackMethod;
-        if (confOptions.recordingStatusCallbackEvent) confAttributes.recordingStatusCallbackEvent = confOptions.recordingStatusCallbackEvent;
-        if (confOptions.statusCallbackEvent) confAttributes.statusCallbackEvent = confOptions.statusCallbackEvent;
-        if (confOptions.statusCallback) confAttributes.statusCallback = confOptions.statusCallback;
-        if (confOptions.statusCallbackMethod) confAttributes.statusCallbackMethod = confOptions.statusCallbackMethod;
-        if (confOptions.talkDetection) confAttributes.talkDetection = confOptions.talkDetection;
-        if (confOptions.trim) confAttributes.trim = confOptions.trim;
-        
-        this.nestedElements.get(dialId).push({
-          type: 'Conference',
-          attributes: confAttributes,
-          content: conferenceName
-        });
-        
-        return dialBuilder;
-      },
-      
-      addService: (serviceNumber, svcOptions = {}) => {
-        const svcAttributes = {};
-        if (svcOptions.provider) svcAttributes.provider = svcOptions.provider;
-        if (svcOptions.username) svcAttributes.username = svcOptions.username;
-        if (svcOptions.password) svcAttributes.password = svcOptions.password;
-        
-        this.nestedElements.get(dialId).push({
-          type: 'Service',
-          attributes: svcAttributes,
-          content: serviceNumber
-        });
-        
-        return dialBuilder;
-      },
-      
-      addHeader: (name, value) => {
-        this.nestedElements.get(dialId).push({
-          type: 'Header',
-          attributes: { name, value },
-          content: undefined
-        });
-        
-        return dialBuilder;
-      },
-      
-      done: () => this
-    };
+    // Handle string shorthand for phone number
+    if (typeof options === 'string') {
+      builder.addNumber(options);
+    }
     
-    return dialBuilder;
+    // If a cxml callback is provided, create a temporary object with the available
+    // nested nouns and pass it to the callback
+    if (typeof cxml === 'function') {
+      const dialCxml = {
+        // Header noun should always be added first
+        addHeader: (name, value) => {
+          builder.addHeader(name, value);
+          return dialCxml;
+        },
+        
+        // Number noun - mutually exclusive with sip, conference, service
+        addNumber: (number, options = {}) => {
+          builder.addNumber(number, options);
+          return dialCxml;
+        },
+        
+        // Sip noun - mutually exclusive with number, conference, service
+        addSip: (sipUri, sipOptions = {}) => {
+          builder.addSip(sipUri, sipOptions);
+          return dialCxml;
+        },
+        
+        // Conference noun - mutually exclusive with number, sip, service
+        addConference: (conferenceName, confOptions = {}) => {
+          builder.addConference(conferenceName, confOptions);
+          return dialCxml;
+        },
+        
+        // Service noun - mutually exclusive with number, sip, conference
+        addService: (serviceNumber, svcOptions = {}) => {
+          builder.addService(serviceNumber, svcOptions);
+          return dialCxml;
+        }
+      };
+      
+      // Execute the callback with the cxml object
+      cxml(dialCxml);
+    }
+    
+    return this;
   }
 
   /**
@@ -336,15 +275,24 @@ class CXMLBuilder {
    * @returns {CXMLBuilder} - The builder instance for chaining
    */
   addPause(length = 1, options = {}) {
-    const attributes = { length };
+    // Use the Pause verb to create the element
+    const PauseVerb = require('./verbs/pause');
+    const pauseElement = PauseVerb.create(length, options);
     
-    if (options.answer !== undefined) attributes.answer = options.answer;
-    
+    // Add the element to our elements list
     this.elements.push({
       type: 'Pause',
-      attributes,
+      attributes: {},
+      element: pauseElement,
       content: undefined
     });
+    
+    // Map attribute properties to our internal format
+    for (const key in pauseElement) {
+      if (key.startsWith('@_')) {
+        this.elements[this.elements.length - 1].attributes[key.substring(2)] = pauseElement[key];
+      }
+    }
     
     return this;
   }
@@ -387,33 +335,53 @@ class CXMLBuilder {
    * @param {string} options.recordingStatusCallbackEvent - Events to trigger callbacks
    * @param {string} options.trim - How to trim silence (trim, trim-silence, do-not-trim)
    * @param {string} options.fileFormat - Format of the recording (mp3, wav)
+   * @param {Function} [cxml] - Callback function for defining nested elements
    * @returns {CXMLBuilder} - The builder instance for chaining
    */
-  addRecord(options = {}) {
-    const attributes = {};
+  addRecord(options = {}, cxml) {
+    // Use the Record verb to create the element and builder
+    const RecordVerb = require('./verbs/record');
     
-    if (options.answer !== undefined) attributes.answer = options.answer;
-    if (options.action) attributes.action = options.action;
-    if (options.method) attributes.method = options.method;
-    if (options.timeout) attributes.timeout = options.timeout;
-    if (options.maxLength) attributes.maxLength = options.maxLength;
-    if (options.maxSilence) attributes.maxSilence = options.maxSilence;
-    if (options.finishOnKey) attributes.finishOnKey = options.finishOnKey;
-    if (options.playBeep !== undefined) attributes.playBeep = options.playBeep;
-    if (options.transcribe !== undefined) attributes.transcribe = options.transcribe;
-    if (options.transcribeCallback) attributes.transcribeCallback = options.transcribeCallback;
-    if (options.transcribeEngine) attributes.transcribeEngine = options.transcribeEngine;
-    if (options.recordingStatusCallback) attributes.recordingStatusCallback = options.recordingStatusCallback;
-    if (options.recordingStatusCallbackMethod) attributes.recordingStatusCallbackMethod = options.recordingStatusCallbackMethod;
-    if (options.recordingStatusCallbackEvent) attributes.recordingStatusCallbackEvent = options.recordingStatusCallbackEvent;
-    if (options.trim) attributes.trim = options.trim;
-    if (options.fileFormat) attributes.fileFormat = options.fileFormat;
+    // Create the element and builder
+    const { element, builder } = RecordVerb.create(this, options);
     
+    // Add the element to our elements list
     this.elements.push({
       type: 'Record',
-      attributes,
-      content: undefined
+      attributes: {},
+      element: element
     });
+    
+    // Map attribute properties to our internal format
+    for (const key in element) {
+      if (key.startsWith('@_')) {
+        this.elements[this.elements.length - 1].attributes[key.substring(2)] = element[key];
+      }
+    }
+    
+    // If a cxml callback is provided, create a temporary object with the available
+    // nested verbs and pass it to the callback
+    if (typeof cxml === 'function') {
+      const recordCxml = {
+        addSay: (text, sayOptions = {}) => {
+          builder.addSay(text, sayOptions);
+          return recordCxml;
+        },
+        
+        addPlay: (url, playOptions = {}) => {
+          builder.addPlay(url, playOptions);
+          return recordCxml;
+        },
+        
+        addPause: (length = 1, pauseOptions = {}) => {
+          builder.addPause(length, pauseOptions);
+          return recordCxml;
+        }
+      };
+      
+      // Execute the callback with the cxml object
+      cxml(recordCxml);
+    }
     
     return this;
   }
@@ -464,6 +432,129 @@ class CXMLBuilder {
     
     return this;
   }
+  
+  /**
+   * Add a Start element to the Response
+   * @param {Function} [cxml] - Callback function for defining nested elements
+   * @returns {CXMLBuilder} - The builder instance for chaining
+   */
+  addStart(cxml) {
+    // Use the Start verb to create the element and builder
+    const StartVerb = require('./verbs/start');
+    
+    // Create the element and builder
+    const { element, builder } = StartVerb.create(this);
+    
+    // Add the element to our elements list
+    this.elements.push({
+      type: 'Start',
+      attributes: {},
+      element: element
+    });
+    
+    // If a cxml callback is provided, create a temporary object with the available
+    // nested verbs and pass it to the callback
+    if (typeof cxml === 'function') {
+      const startCxml = {
+        addStream: (options = {}) => {
+          builder.addStream(options);
+          return startCxml;
+        }
+      };
+      
+      // Execute the callback with the cxml object
+      cxml(startCxml);
+    }
+    
+    return this;
+  }
+  
+  /**
+   * Add a Converse element to the Response
+   * @param {Object} options - Configuration for the Converse element
+   * @param {string} options.voice - TTS voice to use
+   * @param {string} options.language - Language code
+   * @param {string} options.statusCallback - URL for status updates
+   * @param {string} options.statusCallbackMethod - HTTP method for callbacks
+   * @param {string} options.statusCallbackEvent - Events to trigger callbacks
+   * @param {string} options.sessionTools - Built-in tools to enable ('hangup', 'redirect', 'dial')
+   * @param {string} options.model - LLM model to use
+   * @param {string} options.context - Context handling ('auto', 'none', 'no')
+   * @param {number} options.temperature - Sampling temperature for LLM
+   * @param {Function} [cxml] - Callback function for defining nested elements
+   * @returns {CXMLBuilder} - The builder instance for chaining
+   */
+  addConverse(options = {}, cxml) {
+    // Use the Converse verb to create the element and builder
+    const ConverseVerb = require('./verbs/converse');
+    
+    // Create the element and builder
+    const { element, builder } = ConverseVerb.create(this, options);
+    
+    // Add the element to our elements list
+    this.elements.push({
+      type: 'Converse',
+      attributes: {},
+      element: element
+    });
+    
+    // Map attribute properties to our internal format
+    for (const key in element) {
+      if (key.startsWith('@_')) {
+        this.elements[this.elements.length - 1].attributes[key.substring(2)] = element[key];
+      }
+    }
+    
+    // If a cxml callback is provided, create a temporary object with the available
+    // nested nouns and pass it to the callback
+    if (typeof cxml === 'function') {
+      const converseCxml = {
+        // Tool noun
+        addTool: (name, url, toolOptions = {}) => {
+          const toolBuilder = builder.addTool(name, url, toolOptions);
+          
+          // Return a tool object with parameter and description methods
+          const toolObj = {
+            addParameter: (paramName, paramOptions = {}) => {
+              toolBuilder.addParameter(paramName, paramOptions);
+              return toolObj;
+            },
+            addDescription: (description) => {
+              toolBuilder.addDescription(description);
+              return toolObj;
+            },
+            done: () => converseCxml
+          };
+          
+          return toolObj;
+        },
+        
+        // System noun
+        addSystem: (text) => {
+          builder.addSystem(text);
+          return converseCxml;
+        },
+        
+        // User noun
+        addUser: (text) => {
+          builder.addUser(text);
+          return converseCxml;
+        },
+        
+        // Speech noun
+        addSpeech: () => {
+          builder.addSpeech();
+          return converseCxml;
+        }
+      };
+      
+      // Execute the callback with the cxml object
+      cxml(converseCxml);
+    }
+    
+    return this;
+  }
+  
 
   /**
    * Build the CXML document and return it as a string
@@ -479,6 +570,9 @@ class CXMLBuilder {
     
     xml += '</Response>';
     
+    // Replace <s> with <System> to ensure System elements are rendered correctly
+    xml = xml.replace(/<s>/g, '<System>').replace(/<\/s>/g, '</System>');
+    
     return xml;
   }
   
@@ -491,45 +585,106 @@ class CXMLBuilder {
    */
   _renderElement(element, indentLevel) {
     const indent = '  '.repeat(indentLevel);
-    let result = `${indent}<${element.type}`;
+    
+    // Special case for System elements
+    let elementType = element.type;
+    if (elementType === 'System') {
+      elementType = 'System'; // Keep it as System
+    } else if (elementType === 's' && element.content && typeof element.content === 'string') {
+      // If it's an <s> tag with content, it's actually a System tag
+      elementType = 'System';
+    }
+    
+    let result = `${indent}<${elementType}`;
     
     // Add attributes
     for (const [name, value] of Object.entries(element.attributes)) {
       result += ` ${name}="${this._escapeXml(String(value))}"`;
     }
     
-    // Check if the element has nested elements
-    const hasNestedElements = element.id && this.nestedElements.has(element.id) && 
-                              this.nestedElements.get(element.id).length > 0;
+    // Check for different types of nested elements
+    const hasLegacyNestedElements = element.id && this.nestedElements.has(element.id) && 
+                                  this.nestedElements.get(element.id).length > 0;
+    const hasCxmlNestedElements = element.element && element.element.cxml && 
+                                element.element.cxml.length > 0;
+    const hasToolNestedElements = element.type === 'Tool' && 
+                                (element.element.Description || 
+                                 (element.element.Parameter && element.element.Parameter.length > 0));
     
     // Handle self-closing tags, content, and nested elements
-    if (!element.content && !hasNestedElements) {
+    if (!element.content && !hasLegacyNestedElements && !hasCxmlNestedElements && !hasToolNestedElements) {
       // Self-closing element with no content
       result += '/>\n';
-    } else if (element.content && !hasNestedElements) {
+    } else if (element.content && !hasLegacyNestedElements && !hasCxmlNestedElements && !hasToolNestedElements) {
       // Element with text content but no nested elements
-      result += `>${this._escapeXml(element.content)}</${element.type}>\n`;
-    } else if (!element.content && hasNestedElements) {
-      // Element with nested elements but no text content
-      result += '>\n';
-      
-      // Add all nested elements
-      for (const nestedElement of this.nestedElements.get(element.id)) {
-        result += this._renderElement(nestedElement, indentLevel + 1);
-      }
-      
-      result += `${indent}</${element.type}>\n`;
+      // Use the same element type for closing tag
+      result += `>${this._escapeXml(element.content)}</${elementType}>\n`;
     } else {
-      // Element with both text content and nested elements
-      // For standard XML, keep the text content on the same line as the opening tag
-      result += '>' + this._escapeXml(element.content) + '\n';
-      
-      // Add all nested elements
-      for (const nestedElement of this.nestedElements.get(element.id)) {
-        result += this._renderElement(nestedElement, indentLevel + 1);
+      // Element with nested elements (and possibly content)
+      if (element.content) {
+        result += '>' + this._escapeXml(element.content) + '\n';
+      } else {
+        result += '>\n';
       }
       
-      result += `${indent}</${element.type}>\n`;
+      // Add legacy nested elements if they exist
+      if (hasLegacyNestedElements) {
+        for (const nestedElement of this.nestedElements.get(element.id)) {
+          result += this._renderElement(nestedElement, indentLevel + 1);
+        }
+      }
+      
+      // Add cxml nested elements if they exist
+      if (hasCxmlNestedElements) {
+        for (const nestedItem of element.element.cxml) {
+          // Create a temporary element structure that matches our rendering expectations
+          const tempElement = {
+            type: nestedItem.type,
+            attributes: {},
+            element: nestedItem.element,
+            content: nestedItem.element['#text']
+          };
+          
+          // Extract attributes from the element
+          for (const key in nestedItem.element) {
+            if (key.startsWith('@_')) {
+              tempElement.attributes[key.substring(2)] = nestedItem.element[key];
+            }
+          }
+          
+          result += this._renderElement(tempElement, indentLevel + 1);
+        }
+      }
+      
+      // Add Tool's nested elements if they exist
+      if (hasToolNestedElements) {
+        // Add Description if it exists
+        if (element.element.Description) {
+          const descIndent = '  '.repeat(indentLevel + 1);
+          result += `${descIndent}<Description>${this._escapeXml(element.element.Description['#text'])}</Description>\n`;
+        }
+        
+        // Add Parameters if they exist
+        if (element.element.Parameter && element.element.Parameter.length > 0) {
+          const paramIndent = '  '.repeat(indentLevel + 1);
+          for (const param of element.element.Parameter) {
+            let paramStr = `${paramIndent}<Parameter`;
+            
+            // Add Parameter attributes
+            for (const key in param) {
+              if (key.startsWith('@_')) {
+                paramStr += ` ${key.substring(2)}="${this._escapeXml(String(param[key]))}"`;
+              }
+            }
+            
+            paramStr += '/>\n';
+            result += paramStr;
+          }
+        }
+      }
+      
+      // Use the same element type for closing tag
+      result += `${indent}</${elementType}>\n`;
     }
     
     return result;
